@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package handlers.api.users.v1;
+
+service UserService {
+	rpc CreateUser(CreateUserRequest) returns(CreateUserResponse) {}
+	rpc TakeUserByPhoneNumber(TakeUserByPhoneNumberRequest) returns(User) {}
+	rpc TakeUserByUUID(TakeUserByUUIDRequest) returns(User) {}
+}
+
+enum Gender {
+  MALE = 0;
+  FEMALE = 1;
+}
+
+message CreateUserRequest {
+	string full_name = 1;
+	string phone_number = 2;
+	string birth_date = 3;
+	Gender gender = 4;
+}
+
+message CreateUserResponse {
+	string user_id = 1;
+}
+
+message TakeUserByPhoneNumberRequest {
+	string phone_number = 1;
+}
+
+message User {
+	string id = 1;
+	string full_name = 2;
+	string phone_number = 3;
+	string birth_date = 4;
+	Gender gender = 5;
+}
+
+message TakeUserByUUIDRequest {
+	string user_id = 1;
+}

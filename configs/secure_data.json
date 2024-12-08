@@ -1,0 +1,8 @@
+{
+    "service": {
+        "access_token": {
+            "public_key": "",
+            "private_key": ""
+        }
+    }
+}

@@ -1,43 +1,53 @@
 cmake_minimum_required(VERSION 3.12)
-project(pg_grpc_service_template CXX)
+project(user_service CXX)
 
-# Adding userver dependency
-find_package(userver COMPONENTS core grpc postgresql QUIET)
-if(NOT userver_FOUND)  # Fallback to subdirectory usage
-    # Enable userver libraries that are needed in this project
-    set(USERVER_FEATURE_POSTGRESQL ON CACHE BOOL "" FORCE)
-    set(USERVER_FEATURE_GRPC ON CACHE BOOL "" FORCE)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED on)
 
-    # Compatibility mode: some systems don't support these features
-    set(USERVER_FEATURE_CRYPTOPP_BLAKE2 OFF CACHE BOOL "" FORCE)
-    set(USERVER_FEATURE_GRPC_CHANNELZ OFF CACHE BOOL "" FORCE)
-    set(USERVER_FEATURE_REDIS_HI_MALLOC ON CACHE BOOL "" FORCE)
-
-    if (EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/third_party/userver)
-        message(STATUS "Using userver framework from third_party/userver")
-        add_subdirectory(third_party/userver)
-    else()
-        message(FATAL_ERROR "Either install the userver or provide a path to it")
-    endif()
-endif()
+find_package(userver COMPONENTS universal core postgresql grpc chaotic REQUIRED)
 
 userver_setup_environment()
 
-
 # Common sources
-add_library(${PROJECT_NAME}_objs OBJECT
-    src/hello.hpp
-    src/hello.cpp
-    src/hello_client.hpp
-    src/hello_client.cpp
+file(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp")
+list(FILTER SOURCES EXCLUDE REGEX ".*(_test|_benchmark)\\.cpp$")
+list(FILTER SOURCES EXCLUDE REGEX ".*/main\\.cpp$")
+add_library(${PROJECT_NAME}_objs OBJECT ${SOURCES})
+
+target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver::postgresql userver::grpc ${PROJECT_NAME}-chgen ${PROJECT_NAME}_proto  ${PROJECT_NAME}_sql)
+target_include_directories(${PROJECT_NAME}_objs PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+file(GLOB_RECURSE SCHEMAS ${CMAKE_CURRENT_SOURCE_DIR}/docs/yaml/*.yaml)
+userver_target_generate_chaotic(
+  ${PROJECT_NAME}-chgen
+  ARGS
+  -n
+  "/components/schemas/([^/]*)/=dto::user::{0}"
+  -f
+  "(.*)={0}"
+  --clang-format=
+  --generate-serializers
+  OUTPUT_DIR
+  ${CMAKE_CURRENT_BINARY_DIR}/src
+  SCHEMAS
+  ${SCHEMAS}
+  RELATIVE_TO
+  ${CMAKE_CURRENT_SOURCE_DIR}
 )
-target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver::postgresql userver::grpc)
 
 # Create a proto library with userver extensions
-include(GrpcTargets)
-userver_add_grpc_library(${PROJECT_NAME}_proto PROTOS handlers/hello.proto)
+userver_add_grpc_library(${PROJECT_NAME}_proto PROTOS handlers/user.proto)
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC ${PROJECT_NAME}_proto)
 
+userver_add_sql_library(
+  ${PROJECT_NAME}_sql
+  NAMESPACE
+  ${PROJECT_NAME}
+  OUTPUT_DIR
+  ${CMAKE_CURRENT_BINARY_DIR}
+  SQL_FILES
+  src/sql/*.sql
+)
 
 # The Service
 add_executable(${PROJECT_NAME} src/main.cpp)
@@ -45,23 +55,17 @@ target_link_libraries(${PROJECT_NAME} PRIVATE ${PROJECT_NAME}_objs)
 
 
 # Unit Tests
-add_executable(${PROJECT_NAME}_unittest
-    src/hello_test.cpp
-)
-target_link_libraries(${PROJECT_NAME}_unittest PRIVATE ${PROJECT_NAME}_objs userver::utest)
-add_google_tests(${PROJECT_NAME}_unittest)
+# add_executable(${PROJECT_NAME}_unittest
+# )
+# target_link_libraries(${PROJECT_NAME}_unittest PRIVATE ${PROJECT_NAME}_objs userver::utest)
+# add_google_tests(${PROJECT_NAME}_unittest)
 
 
 # Benchmarks
-add_executable(${PROJECT_NAME}_benchmark
-    src/hello_benchmark.cpp
-)
-target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver::ubench)
-add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
-
-
-# Functional Tests
-include(UserverTestsuite)
+# add_executable(${PROJECT_NAME}_benchmark
+# )
+# target_link_libraries(${PROJECT_NAME}_benchmark PRIVATE ${PROJECT_NAME}_objs userver::ubench)
+# add_google_benchmark_tests(${PROJECT_NAME}_benchmark)
 
 userver_testsuite_add_simple()
 

@@ -14,45 +14,17 @@ components_manager:
     default_task_processor: main-task-processor
 
     components:                       # Configuring components that were registered via component_list
-        # Settings common to all gRPC client factories
-        grpc-client-common:
-            # The TaskProcessor for blocking connection initiation
-            blocking-task-processor: grpc-blocking-task-processor
-
-        grpc-client-factory:
-            # Optional channel parameters for gRPC Core
-            # https://grpc.github.io/grpc/core/group__grpc__arg__keys.html
-            channel-args: {}
-            middlewares:
-              - grpc-client-logging
-              - grpc-client-deadline-propagation
-
-        grpc-client-logging:
-        grpc-client-deadline-propagation:
-
-        handler-hello:
-
-        hello-client:
-            endpoint: $hello-endpoint
-
-        grpc-server:
-            port: 8081
-            service-defaults:
-                middlewares:
-                  - grpc-server-logging
-                  - grpc-server-deadline-propagation
-                  - grpc-server-congestion-control
-                task-processor: main-task-processor
 
         congestion-control:
-        grpc-server-logging:
-        grpc-server-deadline-propagation:
-        grpc-server-congestion-control:
+
+        dump-configurator:
+            dump-root: dumps-root
 
         server:
             listener:                 # configuring the main listening socket...
                 port: $server-port            # ...to listen on this port and...
                 task_processor: main-task-processor    # ...process incoming requests on this task processor.
+
         logging:
             fs-task-processor: fs-task-processor
             loggers:
@@ -61,21 +33,15 @@ components_manager:
                     level: $logger-level
                     overflow_behavior: discard  # Drop logs if the system is too busy to write them down.
 
-        # Dynamic config options. Cache is disabled, updates are disabled.
-        dynamic-config:
-            # For most of userver dynamic configs, defaults are used, some are overridden here.
-            # See userver "dynamic config" docs for what configs exist.
-            defaults:
-                HTTP_CLIENT_CONNECTION_POOL_SIZE: 1000
-                POSTGRES_DEFAULT_COMMAND_CONTROL:
-                    network_timeout_ms: 750
-                    statement_timeout_ms: 500
-
         testsuite-support: {}
 
         http-client:
             load-enabled: $is-testing
             fs-task-processor: fs-task-processor
+        
+        secdist: {}
+        default-secdist-provider:
+            config: $secdist-path
 
         tests-control:
             load-enabled: $is-testing
@@ -89,6 +55,15 @@ components_manager:
             task_processor: main-task-processor
             throttling_enabled: false
             url_trailing_slash: strict-match
+
+        grpc-server:
+            port: 8081
+
+        component-user:
+
+        handler-user-v1-internal:
+            middlewares: []
+            task-processor: main-task-processor
 
         postgres-db-1:
             dbconnection: $dbconnection

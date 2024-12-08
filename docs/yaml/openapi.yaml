@@ -1,0 +1,89 @@
+openapi: 3.0.0
+info:
+    title: vote-up-user_service
+    version: 0.0.1
+    description: |-
+        Сервис для взаимодействия с пользовательскими данными
+
+components:
+    securitySchemes:
+        bearerAuth:
+            type: http
+            scheme: bearer
+            bearerFormat: JWT
+    schemas:
+        Empty:
+            additionalProperties: false
+            type: object
+            properties: {}
+        Error:
+            additionalProperties: false
+            type: object
+            properties: {}
+        User:
+            type: object
+            additionalProperties: false
+            properties:
+                id:
+                    type: string
+                    format: uuid
+                    maxLength: 36
+                createdAt:
+                        type: string
+                        format: date
+                        maxLength: 10
+                phoneNumber:
+                        type: string
+                        maxLength: 18
+                fullName:
+                        type: string
+                        maxLength: 128
+                birthDate:
+                        type: string
+                        format: date
+                        maxLength: 10
+                gender:
+                        type: string
+                        pattern: (male|female)
+                        minLength: 4
+                        maxLength: 5
+            required:
+              - id
+              - phoneNumber
+              - fullName
+              - birthDate
+              - gender
+        CreateUser:
+            type: object
+            additionalProperties: false
+            properties:
+                phoneNumber:
+                        type: string
+                        maxLength: 18
+                fullName:
+                        type: string
+                        maxLength: 128
+                birthDate:
+                        type: string
+                        format: date
+                        maxLength: 10
+                gender:
+                        type: string
+                        pattern: (male|female)
+                        minLength: 4
+                        maxLength: 5
+            required:
+              - phoneNumber
+              - fullName
+              - birthDate
+              - gender
+    examples:
+        User:
+            summary: Пример данных о пользователе
+            value:
+                id: "c9de2ff6-ff0f-40c4-92e5-133217f184d3"
+                createdAt: "2024-12-06"
+                phoneNumber: "+79993332222"
+                gender: 0
+                fullName: "Alexandr Tsyrenov"
+                birthDate: "2004-09-23"

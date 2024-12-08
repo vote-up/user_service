@@ -7,5 +7,5 @@ is-testing: false
 
 server-port: 8080
 server-grpc-port: 8081
+secdist-path: /secure_data.json
 
-hello-endpoint: '[::1]:8081'
